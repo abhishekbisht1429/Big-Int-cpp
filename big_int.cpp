@@ -35,6 +35,15 @@ class big_int {
             --len;
         this->len = len;
     }
+    
+    /* Copy Constructor */
+    public:big_int(const big_int &num) {
+        this->signum = num.get_signum();
+        this->len = num.get_len();
+        this->mag = new char[this->len];
+        for(int i=0; i<this->len; ++i)
+            this->mag[i] = num.get_mag()[i];
+    }
 
     /* Destructor */
     public:~big_int() {
@@ -42,15 +51,15 @@ class big_int {
     }
 
     /* Getter functions */
-    public:int get_signum() {
+    public:int get_signum() const {
         return signum;
     }
 
-    public:char *get_mag() {
+    public:char *get_mag() const {
         return mag;
     }
 
-    public:int get_len() {
+    public:int get_len() const {
         return len;
     }
 
@@ -60,7 +69,9 @@ class big_int {
         * Returns -1 if mag1 < mag2
         * Returns 0 otherwise
     */
-    public:int comp(char *mag1, int len1, char *mag2, int len2) {
+    public:int comp(char *mag2, int len2) {
+        char *mag1 = this->mag;
+        int len1 = this->len;
         if(len1 > len2)
             return 1;
         else if(len1 < len2)
@@ -78,7 +89,9 @@ class big_int {
     /* 
         * Addition of two magnitudes 
     */
-    public:int add(char *mag1, int len1, char *mag2, int len2, char **res) {
+    public:int sum(char *mag2, int len2, char **res) {
+        char *mag1 = this->mag;
+        int len1 = this->len;
         /* To ensure that mag2 has greater length */
         if(len1 > len2) {
             swap(mag1, mag2);
@@ -115,9 +128,11 @@ class big_int {
     /* 
         * Absolute difference between two magnitudes
     */
-    public:int diff(char *mag1, int len1, char *mag2, int len2, char **res) {
+    public:int diff(char *mag2, int len2, char **res) {
+        char *mag1 = this->mag;
+        int len1 = this->len;
         /* Ensure that mag1 is higher */
-        if(comp(mag1, len1, mag2, len2) < 0) {
+        if(comp(mag2, len2) < 0) {
             swap(mag1, mag2);
             swap(len1, len2);
         }
@@ -156,20 +171,53 @@ class big_int {
         return len;
     }
 
+    /*
+        * Operator overloading for addition
+    */
+    public:big_int operator+(big_int &num) {
+        /* handle the cases when either is zero */
+        if(num.get_signum() == 0)
+            return *this;
+        else if(this->signum == 0)
+            return num;
+        
+        char *mag;
+        int len;
+        int signum;
+        if(this->signum * num.get_signum() > 0) {
+            len = this->sum(num.get_mag(), num.get_len(), &mag);
+        } else {
+            len = this->diff(num.get_mag(), num.get_len(), &mag);
+            signum = comp(num.get_mag(), num.get_len());
+        }
+
+        big_int res(signum, mag, len);
+        delete[] mag;
+
+        return res;
+    }
+
+    public:void print() {
+        if(signum < 0)
+            cout<<"-";
+        for(int i=len-1; i>=0; --i) {
+            cout<<(int)mag[i];
+        }
+        cout<<"\n";
+    }
+
 
 };
 
 int main() {
-
-    big_int bi(0, nullptr, 0);
     char mag1[] = {1, 2, 3, 4, 5, 3, 4};
     char mag2[] = {0, 2, 4, 4, 5, 3, 4, 4, 4, 4};
 
-    char *res;
-    int len = bi.diff(mag1, 7, mag2, 10, &res);
-    // cout<<len<<"\n";
-    for(int i=0; i<len; ++i) {
-        cout<<(int)res[i]<<" ";
-    }
-    cout<<"\n";
+    big_int bi1(1, mag1, 7);
+    big_int bi2(1, mag2, 10);
+
+    bi1.print();
+    bi2.print();
+    big_int bi3 = bi1 + bi2;
+    bi3.print();
 }
