@@ -1,5 +1,10 @@
 #include<iostream>
 #include<cstring>
+#include<tuple>
+#include<fstream>
+#include<chrono>
+
+#define DEBUG
 
 using namespace std;
 
@@ -22,6 +27,9 @@ class big_int {
         * zero is represented by len = 0 
     */
     int len;
+
+    /* Constructor */
+    public:big_int(): signum(0), mag(nullptr), len(0) {}
 
     /* Constructor */
     public:big_int(int signum, char *mag, int len) {
@@ -69,9 +77,7 @@ class big_int {
         * Returns -1 if mag1 < mag2
         * Returns 0 otherwise
     */
-    public:int comp(char *mag2, int len2) {
-        char *mag1 = this->mag;
-        int len1 = this->len;
+    private:int comp(char *mag1, int len1, char *mag2, int len2) {
         if(len1 > len2)
             return 1;
         else if(len1 < len2)
@@ -89,9 +95,7 @@ class big_int {
     /* 
         * Addition of two magnitudes 
     */
-    public:int sum(char *mag2, int len2, char **res) {
-        char *mag1 = this->mag;
-        int len1 = this->len;
+    public:int sum(char *mag1, int len1, char *mag2, int len2, char **res) {
         /* To ensure that mag2 has greater length */
         if(len1 > len2) {
             swap(mag1, mag2);
@@ -128,11 +132,9 @@ class big_int {
     /* 
         * Absolute difference between two magnitudes
     */
-    public:int diff(char *mag2, int len2, char **res) {
-        char *mag1 = this->mag;
-        int len1 = this->len;
+    private:int diff(char *mag1, int len1, char *mag2, int len2, char **res) {
         /* Ensure that mag1 is higher */
-        if(comp(mag2, len2) < 0) {
+        if(comp(mag1, len1, mag2, len2) < 0) {
             swap(mag1, mag2);
             swap(len1, len2);
         }
@@ -171,10 +173,46 @@ class big_int {
         return len;
     }
 
-    /*
-        * Operator overloading for addition
+    /* 
+        * < Operator
     */
-    public:big_int operator+(big_int &num) {
+    public:bool operator<(const big_int &num) {
+        return comp(this->mag, this->len, num.get_mag(), num.get_len()) < 0;
+    }
+
+    /*
+        * <= operator
+    */
+    public:bool operator<=(const big_int &num) {
+        return comp(this->mag, this->len, num.get_mag(), num.get_len()) <= 0;
+    }
+
+    /*
+        * > operator
+    */
+    public:bool operator>(const big_int &num) {
+        return comp(this->mag, this->len, num.get_mag(), num.get_len()) > 0;
+    }
+
+    /*
+        * >= operator
+    */
+    public:bool operator>=(const big_int &num) {
+        return comp(this->mag, this->len, num.get_mag(), num.get_len()) >= 0;
+    }
+
+    /*
+        * - unary operator
+    */
+    public:big_int operator-() {
+        big_int res(this->signum * -1, this->mag, this->len);
+        return res;
+    }
+
+    /*
+        * + operator
+    */
+    public:big_int operator+(const big_int &num) {
         /* handle the cases when either is zero */
         if(num.get_signum() == 0)
             return *this;
@@ -185,10 +223,15 @@ class big_int {
         int len;
         int signum;
         if(this->signum * num.get_signum() > 0) {
-            len = this->sum(num.get_mag(), num.get_len(), &mag);
+            len = this->sum(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
+            signum = this->signum;
         } else {
-            len = this->diff(num.get_mag(), num.get_len(), &mag);
-            signum = comp(num.get_mag(), num.get_len());
+            len = this->diff(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
+            if(comp(this->mag, this->len, num.get_mag(), num.get_len()) > 0) {
+                signum = this->signum;
+            } else {
+                signum = num.get_signum();
+            }
         }
 
         big_int res(signum, mag, len);
@@ -197,7 +240,18 @@ class big_int {
         return res;
     }
 
+    /* 
+        * - operator
+    */
+    public:big_int operator-(big_int &num) {
+        return *this + (-num);
+    }
+
     public:void print() {
+        if(len == 0) {
+            cout<<0<<"\n";
+            return;
+        }
         if(signum < 0)
             cout<<"-";
         for(int i=len-1; i>=0; --i) {
@@ -209,15 +263,67 @@ class big_int {
 
 };
 
+pair<int, int> convert(string &s, char **mag) {
+    int signum;
+    int len;
+    if(s[0] == '-') {
+        signum = -1;
+        len = s.size()-1;
+        for(int i=1; i<s.size(); ++i)
+            (*mag)[len-i] = s[i] - '0';
+    } else {
+        signum = 1;
+        len = s.size();
+        for(int i=0; i<s.size(); ++i)
+            (*mag)[s.size()-i-1] = s[i] - '0';
+    }
+
+    return {signum, len};
+}
 int main() {
-    char mag1[] = {1, 2, 3, 4, 5, 3, 4};
-    char mag2[] = {0, 2, 4, 4, 5, 3, 4, 4, 4, 4};
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    #ifdef DEBUG
+    ifstream _in("input.txt");
+    ofstream _out("output.txt");
+    streambuf* _in_backup = cin.rdbuf();
+    streambuf* _out_backup = cout.rdbuf();
+    cin.rdbuf(_in.rdbuf());
+    cout.rdbuf(_out.rdbuf());
+    auto _start = chrono::high_resolution_clock::now();
+    #endif
+    /* ######################CODE_START################################ */
+    int signum1, signum2;
+    int len1, len2;
+    string s1, s2;
+    getline(cin, s1);
+    getline(cin, s2);
+    char *mag1 = new char[s1.size()];
+    char *mag2 = new char[s2.size()];
 
-    big_int bi1(1, mag1, 7);
-    big_int bi2(1, mag2, 10);
+    tie(signum1, len1) = convert(s1, &mag1);
+    tie(signum2, len2) = convert(s2, &mag2);
 
-    bi1.print();
-    bi2.print();
+
+
+    
+    big_int bi1(signum1, mag1, len1);
+    big_int bi2(signum2, mag2, len2);
+
+    // bi1.print();
+    // bi2.print();
     big_int bi3 = bi1 + bi2;
     bi3.print();
+
+
+    /* #######################CODE_END############################### */
+    #ifdef DEBUG
+    auto _end = chrono::high_resolution_clock::now();
+    auto _duration = chrono::duration_cast<chrono::nanoseconds>(_end - _start);
+    long long _ns = _duration.count();
+    double _s = _ns / 1e9;
+    cout<<"\nDuration: "<<_s<<" sec\n";
+    cin.rdbuf(_in_backup);
+    cout.rdbuf(_out_backup);
+    #endif
 }
