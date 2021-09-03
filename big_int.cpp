@@ -205,8 +205,7 @@ class big_int {
         * - unary operator
     */
     public:big_int operator-() {
-        big_int res(this->signum * -1, this->mag, this->len);
-        return res;
+        return big_int(this->signum * -1, this->mag, this->len);
     }
 
     /*
@@ -219,7 +218,7 @@ class big_int {
         else if(this->signum == 0)
             return num;
         
-        char *mag;
+        char *mag = nullptr;
         int len;
         int signum;
         if(this->signum * num.get_signum() > 0) {
@@ -260,6 +259,68 @@ class big_int {
         cout<<"\n";
     }
 
+    /*
+        * multipy two magnitudes
+    */
+    private:int mul(char *mag1, int len1, char *mag2, int len2, char **res) {
+        if(len1 == 0 || len2 == 0)
+            return 0;
+        /* To ensure that len1 is greater */
+        if(comp(mag1, len1, mag2, len2) < 0) {
+            swap(mag1, mag2);
+            swap(len1, len2);
+        }
+
+        int len = len1 + len2;
+        /* stores final result of multiplication */
+        char *mag = new char[len]();
+        /* stores intermediate values */
+        char *temp = new char[len]();
+
+        /* multiplication algorithm */
+        for(int i=0; i<len2; ++i) {
+            for(int j=0; j<i; ++j)
+                temp[j] = 0;
+            int c = 0;
+            for(int j=i; j<i+len1; ++j) {
+                int p = mag1[j-i] * mag2[i] + c;
+                temp[j] = p%10;
+                c = (p/10)%10;
+            }
+            temp[i+len1] = c;
+
+            char *sum_mag;
+            /* add mag and temp */
+            sum(mag, len, temp, len, &sum_mag);
+            /* copy result into mag */
+            memcpy(mag, sum_mag, len);
+            /* delete the memory allocated by sum function */
+            delete[] sum_mag;
+        }
+        delete[] temp;
+
+        /* remove unnecessary zeros from front */
+        while(len>0 && mag[len-1] == 0)
+            --len;
+        
+        *res = mag;
+        return len;
+    }
+
+    /*
+        * Operator * 
+    */
+   public:big_int operator*(const big_int &num) {
+       int signum = this->signum * num.get_signum();
+       char *mag = nullptr;
+       int len = mul(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
+
+       big_int res(signum, mag, len);
+       delete[] mag;
+
+       return res;
+   }
+
 
 };
 
@@ -271,6 +332,9 @@ pair<int, int> convert(string &s, char **mag) {
         len = s.size()-1;
         for(int i=1; i<s.size(); ++i)
             (*mag)[len-i] = s[i] - '0';
+    } else if(s.size()==1 && s[0] == '0') {
+        signum = 0;
+        len = 0;
     } else {
         signum = 1;
         len = s.size();
@@ -313,7 +377,12 @@ int main() {
     // bi1.print();
     // bi2.print();
     big_int bi3 = bi1 + bi2;
+    big_int bi4 = bi1 - bi2;
     bi3.print();
+    bi4.print();
+
+    big_int bi5 = bi1 * bi2;
+    bi5.print();
 
 
     /* #######################CODE_END############################### */
