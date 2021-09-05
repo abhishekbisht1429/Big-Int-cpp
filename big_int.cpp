@@ -52,14 +52,15 @@ class big_int {
             this->mag = nullptr;
         } else {
             this->signum = num<0?-1:1;
+            num = abs(num);
             long long temp = num;
+            this->len = 0;
             while(temp>0) {
                 this->len++;
                 temp /= 10;
             }
 
             mag = new char[this->len];
-            num = abs(num);
             for(int i=0; i<this->len; ++i) {
                 mag[i] = num%10;
                 num /= 10;
@@ -341,19 +342,30 @@ class big_int {
     /*
         * Operator * 
     */
-   public:big_int operator*(const big_int &num) {
-       int signum = this->signum * num.get_signum();
-       char *mag = nullptr;
-       int len = mul(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
+    public:big_int operator*(const big_int &num) {
+        int signum = this->signum * num.get_signum();
+        char *mag = nullptr;
+        int len = mul(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
 
-       big_int res(signum, mag, len);
-       delete[] mag;
+        big_int res(signum, mag, len);
+        delete[] mag;
 
-       return res;
-   }
-
+        return res;
+    }
 
 };
+
+big_int exp(big_int &a, long long p) {
+    if(p == 0)
+        return big_int(1);
+    
+    big_int res = exp(a, p/2);
+    if(p%2 == 0) {
+        return res * res;
+    } else {
+        return res * res * a;
+    }
+}
 
 pair<int, int> convert(string &s, char **mag) {
     int signum;
@@ -375,6 +387,7 @@ pair<int, int> convert(string &s, char **mag) {
 
     return {signum, len};
 }
+
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
@@ -413,7 +426,11 @@ int main() {
     bi4.print();
 
     big_int bi5 = bi1 * bi2;
+    cout<<"calculated\n";
     bi5.print();
+
+    big_int bi6 = exp(bi1, 1000);
+    bi6.print();
 
 
     /* #######################CODE_END############################### */
