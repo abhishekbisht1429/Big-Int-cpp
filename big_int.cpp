@@ -71,11 +71,7 @@ class big_int {
     
     /* Copy Constructor */
     public:big_int(const big_int &num) {
-        this->signum = num.get_signum();
-        this->len = num.get_len();
-        this->mag = new char[this->len];
-        for(int i=0; i<this->len; ++i)
-            this->mag[i] = num.get_mag()[i];
+        *this = num;
     }
 
     /* Destructor */
@@ -236,7 +232,7 @@ class big_int {
     /*
         * - unary operator
     */
-    public:big_int operator-() {
+    public:big_int operator-() const {
         return big_int(this->signum * -1, this->mag, this->len);
     }
 
@@ -274,21 +270,8 @@ class big_int {
     /* 
         * - operator
     */
-    public:big_int operator-(big_int &num) {
+    public:big_int operator-(const big_int &num) {
         return *this + (-num);
-    }
-
-    public:void print() {
-        if(len == 0) {
-            cout<<0<<"\n";
-            return;
-        }
-        if(signum < 0)
-            cout<<"-";
-        for(int i=len-1; i>=0; --i) {
-            cout<<(int)mag[i];
-        }
-        cout<<"\n";
     }
 
     /*
@@ -353,7 +336,35 @@ class big_int {
         return res;
     }
 
+    public:bool isZero() {
+        return this->len == 0;
+    }
+
+    public: big_int &operator=(const big_int &num) {
+        this->signum = num.get_signum();
+        this->len = num.get_len();
+        this->mag = new char[this->len];
+        for(int i=0; i<this->len; ++i)
+            this->mag[i] = num.get_mag()[i];
+        
+        return *this;
+    }
+
+    public:friend ostream &operator<<(ostream&, big_int const &);
 };
+
+ostream &operator<<(ostream &os, big_int const &num) {
+    if(num.len == 0) {
+        os<<0<<"\n";
+    } else {
+        if(num.signum < 0)
+            os<<"-";
+        for(int i=num.len-1; i>=0; --i) {
+            os<<(int)num.mag[i];
+        }
+    }
+    return os;
+}
 
 big_int exp(big_int &a, long long p) {
     if(p == 0)
@@ -365,6 +376,15 @@ big_int exp(big_int &a, long long p) {
     } else {
         return res * res * a;
     }
+}
+
+big_int factorial(big_int n) {
+    big_int facto = big_int(1);
+    while(!n.isZero()) {
+        facto = facto * n;
+        n = n - big_int(1);
+    }
+    return facto;
 }
 
 pair<int, int> convert(string &s, char **mag) {
@@ -418,19 +438,20 @@ int main() {
     big_int bi1(signum1, mag1, len1);
     big_int bi2(signum2, mag2, len2);
 
-    // bi1.print();
-    // bi2.print();
     big_int bi3 = bi1 + bi2;
     big_int bi4 = bi1 - bi2;
-    bi3.print();
-    bi4.print();
+    cout<<bi3<<"\n";
+    cout<<bi4<<"\n";
 
     big_int bi5 = bi1 * bi2;
-    cout<<"calculated\n";
-    bi5.print();
+    cout<<"\n";
+    cout<<bi5<<"\n";
 
     big_int bi6 = exp(bi1, 1000);
-    bi6.print();
+    cout<<bi6<<"\n";
+
+    big_int bi7 = factorial(bi1);
+    cout<<bi7<<"\n";
 
 
     /* #######################CODE_END############################### */
