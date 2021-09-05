@@ -20,7 +20,7 @@ class big_int {
         * store the magnitude of the integer with least significant
           digit on the left
     */
-    char *mag;
+    char *mag = nullptr;
 
     /*
         * stores the length of the integer
@@ -42,6 +42,30 @@ class big_int {
         while(len > 0 && mag[len-1] == 0)
             --len;
         this->len = len;
+    }
+
+    /* Constructor */
+    public:big_int(long long num) {
+        if(num == 0) {
+            this->signum = 0;
+            this->len = 0;
+            this->mag = nullptr;
+        } else {
+            this->signum = num<0?-1:1;
+            long long temp = num;
+            while(temp>0) {
+                this->len++;
+                temp /= 10;
+            }
+
+            mag = new char[this->len];
+            num = abs(num);
+            for(int i=0; i<this->len; ++i) {
+                mag[i] = num%10;
+                num /= 10;
+            }
+        }
+
     }
     
     /* Copy Constructor */
@@ -199,6 +223,13 @@ class big_int {
     */
     public:bool operator>=(const big_int &num) {
         return comp(this->mag, this->len, num.get_mag(), num.get_len()) >= 0;
+    }
+
+    /*
+        * == operator
+    */
+    public:bool operator==(const big_int &num) {
+        return comp(this->mag, this->len, num.get_mag(), num.get_len()) == 0;
     }
 
     /*
