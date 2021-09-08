@@ -9,16 +9,16 @@
 using namespace std;
 
 class big_int {
+    
     /*
-        1 if positive integer,
-        0 if zero, and
-        -1 if negetive integer
+        * 1 if positive integer,
+        * 0 if zero, and
+        * -1 if negetive integer
     */
     int signum;
 
     /* 
-        * store the magnitude of the integer with least significant
-          digit on the left
+        * store the magnitude of the integer with least significant digit on the left
     */
     char *mag = nullptr;
 
@@ -98,7 +98,7 @@ class big_int {
         * Returns -1 if mag1 < mag2
         * Returns 0 otherwise
     */
-    private:int comp(char *mag1, int len1, char *mag2, int len2) {
+    private:int comp(char *mag1, int len1, char *mag2, int len2) const {
         if(len1 > len2)
             return 1;
         else if(len1 < len2)
@@ -116,7 +116,7 @@ class big_int {
     /* 
         * Addition of two magnitudes 
     */
-    public:int sum(char *mag1, int len1, char *mag2, int len2, char **res) {
+    public:int sum(char *mag1, int len1, char *mag2, int len2, char **res) const {
         /* To ensure that mag2 has greater length */
         if(len1 > len2) {
             swap(mag1, mag2);
@@ -153,7 +153,7 @@ class big_int {
     /* 
         * Absolute difference between two magnitudes
     */
-    private:int diff(char *mag1, int len1, char *mag2, int len2, char **res) {
+    private:int diff(char *mag1, int len1, char *mag2, int len2, char **res) const {
         /* Ensure that mag1 is higher */
         if(comp(mag1, len1, mag2, len2) < 0) {
             swap(mag1, mag2);
@@ -191,6 +191,54 @@ class big_int {
             --len;
         
         *res = temp;
+        return len;
+    }
+
+  /*
+        * multipy two magnitudes
+    */
+    private:int mul(char *mag1, int len1, char *mag2, int len2, char **res) const {
+        if(len1 == 0 || len2 == 0)
+            return 0;
+        /* To ensure that len1 is greater */
+        if(comp(mag1, len1, mag2, len2) < 0) {
+            swap(mag1, mag2);
+            swap(len1, len2);
+        }
+
+        int len = len1 + len2;
+        /* stores final result of multiplication */
+        char *mag = new char[len]();
+        /* stores intermediate values */
+        char *temp = new char[len]();
+
+        /* multiplication algorithm */
+        for(int i=0; i<len2; ++i) {
+            for(int j=0; j<i; ++j)
+                temp[j] = 0;
+            int c = 0;
+            for(int j=i; j<i+len1; ++j) {
+                int p = mag1[j-i] * mag2[i] + c;
+                temp[j] = p%10;
+                c = (p/10)%10;
+            }
+            temp[i+len1] = c;
+
+            char *sum_mag;
+            /* add mag and temp */
+            sum(mag, len, temp, len, &sum_mag);
+            /* copy result into mag */
+            memcpy(mag, sum_mag, len);
+            /* delete the memory allocated by sum function */
+            delete[] sum_mag;
+        }
+        delete[] temp;
+
+        /* remove unnecessary zeros from front */
+        while(len>0 && mag[len-1] == 0)
+            --len;
+        
+        *res = mag;
         return len;
     }
 
@@ -275,54 +323,6 @@ class big_int {
     }
 
     /*
-        * multipy two magnitudes
-    */
-    private:int mul(char *mag1, int len1, char *mag2, int len2, char **res) {
-        if(len1 == 0 || len2 == 0)
-            return 0;
-        /* To ensure that len1 is greater */
-        if(comp(mag1, len1, mag2, len2) < 0) {
-            swap(mag1, mag2);
-            swap(len1, len2);
-        }
-
-        int len = len1 + len2;
-        /* stores final result of multiplication */
-        char *mag = new char[len]();
-        /* stores intermediate values */
-        char *temp = new char[len]();
-
-        /* multiplication algorithm */
-        for(int i=0; i<len2; ++i) {
-            for(int j=0; j<i; ++j)
-                temp[j] = 0;
-            int c = 0;
-            for(int j=i; j<i+len1; ++j) {
-                int p = mag1[j-i] * mag2[i] + c;
-                temp[j] = p%10;
-                c = (p/10)%10;
-            }
-            temp[i+len1] = c;
-
-            char *sum_mag;
-            /* add mag and temp */
-            sum(mag, len, temp, len, &sum_mag);
-            /* copy result into mag */
-            memcpy(mag, sum_mag, len);
-            /* delete the memory allocated by sum function */
-            delete[] sum_mag;
-        }
-        delete[] temp;
-
-        /* remove unnecessary zeros from front */
-        while(len>0 && mag[len-1] == 0)
-            --len;
-        
-        *res = mag;
-        return len;
-    }
-
-    /*
         * Operator * 
     */
     public:big_int operator*(const big_int &num) {
@@ -336,7 +336,7 @@ class big_int {
         return res;
     }
 
-    public:bool isZero() {
+    public:bool isZero() const {
         return this->len == 0;
     }
 
@@ -350,6 +350,91 @@ class big_int {
         return *this;
     }
 
+    int divide(char *mag1, int len1, char *mag2, int len2, char **res) const {
+        *res = nullptr;
+        if(len2 == 0)
+            return -1;
+        if(len1 == 0 || comp(mag1, len1, mag2, len2) < 0)
+            return 0;
+
+        /* allocate memory for dividend and copy mag1 to it */
+        char *dvd = new char[len1];
+        memcpy(dvd, mag1, len1);
+        int len_dvd = len1;
+
+        /* allocate memory for quotient */
+        char *q = new char[len1];
+        int i=len1-1;
+
+        int hi = len1-1;
+        for(int lo=len1-len2; lo>=0; --lo) {
+            /* copy dvd [lo, hi] in temp */
+            int len_t = hi-lo+1;
+            char *temp = new char[len_t];
+            memcpy(temp, dvd+lo, len_t);
+
+            while(1) {
+                /* finding the correct quotient */
+                int nume = temp[len_t-1];
+                int deno = mag2[len2-1];
+                if(len_t > len2)
+                    nume += nume*10 + temp[len_t-2];
+                q[i--] = min(9, nume/deno);
+                char *prod;
+                int len_p = 0;
+                while(1) {
+                    len_p = mul(mag2, len2, q+i+1, 1, &prod);
+                    if(comp(prod, len_p, temp, len_t) <= 0) 
+                        break;
+                    delete[] prod;
+                    --q[i+1];
+                }
+
+                /* subtracting */
+                char *sub = nullptr;
+                int len_s = diff(temp, len_t, prod, len_p, &sub);
+                if(comp(sub, len_s, mag2, len2) < 0) {
+                    /* copy sub to dvd */
+                    hi = hi - len_t + len_s;
+                    if(sub!=nullptr)
+                        memcpy(dvd+lo, sub, len_s);
+                    break;
+                }
+
+                /* else copy sub to temp */
+                len_t = len_s;
+                if(sub!=nullptr)
+                    memcpy(temp, sub, len_s);
+                
+                delete[] prod;
+                delete[] sub;
+            }
+            delete[] temp;
+        }
+
+        int st_q = i+1, end_q = len1-1;
+        while(end_q>=0 && q[end_q] == 0) --end_q;
+        int len_q = end_q - st_q + 1;
+        *res = new char[len_q];
+        memcpy(*res, q+st_q, len_q);
+
+        delete[] dvd;
+        delete[] q;
+
+        return len_q;
+    }
+
+    public:big_int operator/(const big_int &num) const {
+        if(num.isZero())
+            return big_int();
+        
+        int signum = this->signum * num.get_signum();
+        char *mag;
+        int len = 0;
+        len = divide(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
+
+        return big_int(signum, mag, len);
+    }
     public:friend ostream &operator<<(ostream&, big_int const &);
 };
 
@@ -447,12 +532,14 @@ int main() {
     cout<<"\n";
     cout<<bi5<<"\n";
 
-    big_int bi6 = exp(bi1, 1000);
-    cout<<bi6<<"\n";
+    // big_int bi6 = exp(bi1, 1000);
+    // cout<<bi6<<"\n";
 
-    big_int bi7 = factorial(bi1);
-    cout<<bi7<<"\n";
+    // big_int bi7 = factorial(bi1);
+    // cout<<bi7<<"\n";
 
+    big_int bi8 = bi1 / bi2;
+    cout<<bi8<<"\n";
 
     /* #######################CODE_END############################### */
     #ifdef DEBUG
