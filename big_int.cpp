@@ -287,7 +287,7 @@ class big_int {
     /*
         * + operator
     */
-    public:big_int operator+(const big_int &num) {
+    public:big_int operator+(const big_int &num) const {
         /* handle the cases when either is zero */
         if(num.get_signum() == 0)
             return *this;
@@ -318,14 +318,14 @@ class big_int {
     /* 
         * - operator
     */
-    public:big_int operator-(const big_int &num) {
+    public:big_int operator-(const big_int &num) const {
         return *this + (-num);
     }
 
     /*
         * Operator * 
     */
-    public:big_int operator*(const big_int &num) {
+    public:big_int operator*(const big_int &num) const {
         int signum = this->signum * num.get_signum();
         char *mag = nullptr;
         int len = mul(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
@@ -435,6 +435,13 @@ class big_int {
 
         return big_int(signum, mag, len);
     }
+
+    public:big_int operator%(const big_int &num) const {
+        if(num.isZero())
+            return big_int();
+        
+        return *this - ((*this/num)*num);
+    }
     public:friend ostream &operator<<(ostream&, big_int const &);
 };
 
@@ -540,6 +547,9 @@ int main() {
 
     big_int bi8 = bi1 / bi2;
     cout<<bi8<<"\n";
+
+    big_int bi9 = bi1%bi2;
+    cout<<bi9<<"\n";
 
     /* #######################CODE_END############################### */
     #ifdef DEBUG
