@@ -25,14 +25,16 @@ class big_int {
     /*
         * stores the length of the integer
         * zero is represented by len = 0 
+        * NaN (Not a Number) is represented by len = -1
     */
     int len;
 
     /* Constructor */
-    public:big_int(): signum(0), mag(nullptr), len(0) {}
-
-    /* Constructor */
     public:big_int(int signum, char *mag, int len) {
+        if(len < 0) {
+            this->len = len;
+            return;
+        }
         this->signum = signum;
         this->mag = new char[len];
         for(int i=0; i<len; ++i)
@@ -127,7 +129,6 @@ class big_int {
         int len = len2 + 1;
         char *temp = new char[len]();
 
-        /* ------------------------ Processing ---------------- */
         /* add first len1 elements */
         int c = 0;
         for(int i=0; i<len1; ++i) {
@@ -144,7 +145,6 @@ class big_int {
         /* add the carry to the result */
         temp[len2] = c;
         if(c==0) --len;
-        /* ------------------------------------------------------ */
 
         *res = temp;
         return len;
@@ -194,13 +194,13 @@ class big_int {
         return len;
     }
 
-  /*
+    /*
         * multipy two magnitudes
     */
     private:int mul(char *mag1, int len1, char *mag2, int len2, char **res) const {
         if(len1 == 0 || len2 == 0)
             return 0;
-        /* To ensure that len1 is greater */
+        /* Ensure that len1 is greater */
         if(comp(mag1, len1, mag2, len2) < 0) {
             swap(mag1, mag2);
             swap(len1, len2);
@@ -240,6 +240,87 @@ class big_int {
         
         *res = mag;
         return len;
+    }
+
+    /*
+        * Divides mag1 by mag2 
+    */
+    int divide(char *mag1, int len1, char *mag2, int len2, char **res) const {
+        *res = nullptr;
+        if(len2 == 0)
+            return -1;
+        if(len1 == 0 || comp(mag1, len1, mag2, len2) < 0)
+            return 0;
+
+        /* allocate memory for dividend and copy mag1 to it */
+        char *dvd = new char[len1];
+        memcpy(dvd, mag1, len1);
+        int len_dvd = len1;
+
+        /* allocate memory for quotient */
+        char *q = new char[len1];
+        int i=len1-1;
+
+        int hi = len1-1;
+        for(int lo=len1-len2; lo>=0; --lo) {
+            /* copy dvd [lo, hi] in temp */
+            int len_t = hi-lo+1;
+            char *temp = new char[len_t];
+            memcpy(temp, dvd+lo, len_t);
+
+            while(1) {
+                /* finding the correct quotient */
+                int nume = temp[len_t-1];
+                int deno = mag2[len2-1];
+                if(len_t > len2)
+                    nume += nume*10 + temp[len_t-2];
+                q[i--] = min(9, nume/deno);
+                char *prod;
+                int len_p = 0;
+                while(1) {
+                    len_p = mul(mag2, len2, q+i+1, 1, &prod);
+                    if(comp(prod, len_p, temp, len_t) <= 0) 
+                        break;
+                    delete[] prod;
+                    --q[i+1];
+                }
+
+                /* subtracting */
+                char *sub = nullptr;
+                int len_s = diff(temp, len_t, prod, len_p, &sub);
+
+                /* break from loop if sub is less than mag2 */
+                if(comp(sub, len_s, mag2, len2) < 0) {
+                    /* copy sub to dvd */
+                    hi = hi - len_t + len_s;
+                    if(sub!=nullptr)
+                        memcpy(dvd+lo, sub, len_s);
+                    break;
+                }
+
+                /* else copy sub to temp */
+                len_t = len_s;
+                if(sub!=nullptr)
+                    memcpy(temp, sub, len_s);
+                
+                delete[] prod;
+                delete[] sub;
+            }
+            delete[] temp;
+        }
+
+        int st_q = i+1, end_q = len1-1;
+        while(end_q>=0 && q[end_q] == 0) --end_q;
+        int len_q = end_q - st_q + 1;
+
+        /* copy quotient to output variable */
+        *res = new char[len_q];
+        memcpy(*res, q+st_q, len_q);
+
+        delete[] dvd;
+        delete[] q;
+
+        return len_q;
     }
 
     /* 
@@ -340,6 +421,13 @@ class big_int {
         return this->len == 0;
     }
 
+    public:bool isNaN() const {
+        return len == -1;
+    }
+
+    /*
+        * = operator
+    */
     public: big_int &operator=(const big_int &num) {
         this->signum = num.get_signum();
         this->len = num.get_len();
@@ -350,95 +438,28 @@ class big_int {
         return *this;
     }
 
-    int divide(char *mag1, int len1, char *mag2, int len2, char **res) const {
-        *res = nullptr;
-        if(len2 == 0)
-            return -1;
-        if(len1 == 0 || comp(mag1, len1, mag2, len2) < 0)
-            return 0;
-
-        /* allocate memory for dividend and copy mag1 to it */
-        char *dvd = new char[len1];
-        memcpy(dvd, mag1, len1);
-        int len_dvd = len1;
-
-        /* allocate memory for quotient */
-        char *q = new char[len1];
-        int i=len1-1;
-
-        int hi = len1-1;
-        for(int lo=len1-len2; lo>=0; --lo) {
-            /* copy dvd [lo, hi] in temp */
-            int len_t = hi-lo+1;
-            char *temp = new char[len_t];
-            memcpy(temp, dvd+lo, len_t);
-
-            while(1) {
-                /* finding the correct quotient */
-                int nume = temp[len_t-1];
-                int deno = mag2[len2-1];
-                if(len_t > len2)
-                    nume += nume*10 + temp[len_t-2];
-                q[i--] = min(9, nume/deno);
-                char *prod;
-                int len_p = 0;
-                while(1) {
-                    len_p = mul(mag2, len2, q+i+1, 1, &prod);
-                    if(comp(prod, len_p, temp, len_t) <= 0) 
-                        break;
-                    delete[] prod;
-                    --q[i+1];
-                }
-
-                /* subtracting */
-                char *sub = nullptr;
-                int len_s = diff(temp, len_t, prod, len_p, &sub);
-                if(comp(sub, len_s, mag2, len2) < 0) {
-                    /* copy sub to dvd */
-                    hi = hi - len_t + len_s;
-                    if(sub!=nullptr)
-                        memcpy(dvd+lo, sub, len_s);
-                    break;
-                }
-
-                /* else copy sub to temp */
-                len_t = len_s;
-                if(sub!=nullptr)
-                    memcpy(temp, sub, len_s);
-                
-                delete[] prod;
-                delete[] sub;
-            }
-            delete[] temp;
-        }
-
-        int st_q = i+1, end_q = len1-1;
-        while(end_q>=0 && q[end_q] == 0) --end_q;
-        int len_q = end_q - st_q + 1;
-        *res = new char[len_q];
-        memcpy(*res, q+st_q, len_q);
-
-        delete[] dvd;
-        delete[] q;
-
-        return len_q;
-    }
-
+    /*
+        * / operator
+    */
     public:big_int operator/(const big_int &num) const {
-        if(num.isZero())
-            return big_int();
-        
         int signum = this->signum * num.get_signum();
-        char *mag;
+        char *mag = nullptr;
         int len = 0;
         len = divide(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
 
-        return big_int(signum, mag, len);
+        big_int res(signum, mag, len);
+
+        delete[] mag;
+
+        return res;
     }
 
+    /*
+        * % operator
+    */
     public:big_int operator%(const big_int &num) const {
         if(num.isZero())
-            return big_int();
+            return big_int(0, nullptr, -1);
         
         return *this - ((*this/num)*num);
     }
@@ -446,8 +467,10 @@ class big_int {
 };
 
 ostream &operator<<(ostream &os, big_int const &num) {
-    if(num.len == 0) {
+    if(num.isZero()) {
         os<<0;
+    } else if(num.isNaN()) {
+        os<<"NaN";
     } else {
         if(num.signum < 0)
             os<<"-";
@@ -479,6 +502,20 @@ big_int factorial(big_int n) {
     return facto;
 }
 
+big_int gcd(big_int bi1, big_int bi2) {
+    if(bi1 < bi2)
+        swap(bi1, bi2);
+    
+    if(bi1.isZero() && bi2.isZero())
+        return big_int(0, nullptr, -1);
+    else if(bi1.isZero())
+        return bi2;
+    else if(bi2.isZero())
+        return bi1;
+    
+    return gcd(bi1%bi2, bi2);
+}
+
 pair<int, int> convert(string &s, char **mag) {
     int signum;
     int len;
@@ -500,19 +537,6 @@ pair<int, int> convert(string &s, char **mag) {
     return {signum, len};
 }
 
-big_int gcd(big_int bi1, big_int bi2) {
-    if(bi1 < bi2)
-        swap(bi1, bi2);
-    
-    if(bi1.isZero() && bi2.isZero())
-        return big_int();
-    else if(bi1.isZero())
-        return bi2;
-    else if(bi2.isZero())
-        return bi1;
-    
-    return gcd(bi1%bi2, bi2);
-}
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
@@ -545,27 +569,27 @@ int main() {
 
     big_int bi3 = bi1 + bi2;
     big_int bi4 = bi1 - bi2;
-    cout<<bi3<<"\n";
-    cout<<bi4<<"\n";
+    cout<<"sum "<<bi3<<"\n";
+    cout<<"subtraction "<<bi4<<"\n";
 
     big_int bi5 = bi1 * bi2;
-    cout<<"\n";
-    cout<<bi5<<"\n";
+    cout<<"product "<<bi5<<"\n";
 
-    // big_int bi6 = exp(bi1, 1000);
-    // cout<<bi6<<"\n";
+    big_int bi6 = exp(bi1, 1000);
+    cout<<bi6<<"\n";
 
-    // big_int bi7 = factorial(bi1);
-    // cout<<bi7<<"\n";
+    big_int bi7 = factorial(bi1);
+    cout<<bi7<<"\n";
 
     big_int bi8 = bi1 / bi2;
-    cout<<bi8<<"\n";
+    cout<<"quotient "<<bi8<<"\n";
 
     big_int bi9 = bi1%bi2;
-    cout<<bi9<<"\n";
+    cout<<"remainder "<<bi9<<"\n";
 
     big_int bi10 = gcd(bi1, bi2);
-    cout<<bi10<<"\n";
+    cout<<"gcd "<<bi10<<"\n";
+
     /* #######################CODE_END############################### */
     #ifdef DEBUG
     auto _end = chrono::high_resolution_clock::now();
