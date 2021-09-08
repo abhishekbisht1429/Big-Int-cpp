@@ -447,7 +447,7 @@ class big_int {
 
 ostream &operator<<(ostream &os, big_int const &num) {
     if(num.len == 0) {
-        os<<0<<"\n";
+        os<<0;
     } else {
         if(num.signum < 0)
             os<<"-";
@@ -500,6 +500,19 @@ pair<int, int> convert(string &s, char **mag) {
     return {signum, len};
 }
 
+big_int gcd(big_int bi1, big_int bi2) {
+    if(bi1 < bi2)
+        swap(bi1, bi2);
+    
+    if(bi1.isZero() && bi2.isZero())
+        return big_int();
+    else if(bi1.isZero())
+        return bi2;
+    else if(bi2.isZero())
+        return bi1;
+    
+    return gcd(bi1%bi2, bi2);
+}
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
@@ -551,6 +564,8 @@ int main() {
     big_int bi9 = bi1%bi2;
     cout<<bi9<<"\n";
 
+    big_int bi10 = gcd(bi1, bi2);
+    cout<<bi10<<"\n";
     /* #######################CODE_END############################### */
     #ifdef DEBUG
     auto _end = chrono::high_resolution_clock::now();
