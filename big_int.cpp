@@ -85,6 +85,9 @@ class big_int {
                 mag[s.size()-i-1] = s[i] - '0';
         }
     }
+
+    /* Default Constructor */
+    public:big_int(): signum(0), mag(nullptr), len(0) {}
     
     /* Copy Constructor */
     public:big_int(const big_int &num) {
@@ -385,10 +388,12 @@ class big_int {
     */
     public:big_int operator+(const big_int &num) const {
         /* handle the cases when either is zero */
-        if(num.get_signum() == 0)
+        if(num.isZero())
             return *this;
-        else if(this->signum == 0)
+        else if(this->isZero())
             return num;
+        else if(num.isNaN() || this->isNaN())
+            return big_int(0, nullptr, -1);
         
         char *mag = nullptr;
         int len;
@@ -422,6 +427,8 @@ class big_int {
         * Operator * 
     */
     public:big_int operator*(const big_int &num) const {
+        if(this->isNaN() || num.isNaN())
+            return big_int(0, nullptr, -1);
         int signum = this->signum * num.get_signum();
         char *mag = nullptr;
         int len = mul(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
@@ -446,9 +453,12 @@ class big_int {
     public: big_int &operator=(const big_int &num) {
         this->signum = num.get_signum();
         this->len = num.get_len();
-        this->mag = new char[this->len];
-        for(int i=0; i<this->len; ++i)
-            this->mag[i] = num.get_mag()[i];
+
+        if(this->len > 0) {
+            this->mag = new char[this->len];
+            for(int i=0; i<this->len; ++i)
+                this->mag[i] = num.get_mag()[i];
+        }
         
         return *this;
     }
@@ -457,6 +467,8 @@ class big_int {
         * / operator
     */
     public:big_int operator/(const big_int &num) const {
+        if(this->isNaN() || num.isNaN())
+            return big_int(0, nullptr, -1);
         int signum = this->signum * num.get_signum();
         char *mag = nullptr;
         int len = 0;
@@ -473,6 +485,8 @@ class big_int {
         * % operator
     */
     public:big_int operator%(const big_int &num) const {
+        if(this->isNaN() || num.isNaN())
+            return big_int(0, nullptr, -1);
         if(num.isZero())
             return big_int(0, nullptr, -1);
         
