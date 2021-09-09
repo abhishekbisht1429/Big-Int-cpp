@@ -3,12 +3,15 @@
 
 using namespace std;
 
+template<typename T>
 struct node {
-    string val;
-    node *next;
+    T val;
+    node<T> *next;
 };
+
+template<typename T>
 class stack {
-    node *top_ptr;
+    node<T> *top_ptr;
     int size;
 
     public:stack(): top_ptr(nullptr), size(0) {}
@@ -19,11 +22,11 @@ class stack {
     public:void push(string val) {
         ++size;
         if(empty()) {
-            top_ptr = new node();
+            top_ptr = new node<T>();
             top_ptr->val = val;
             return;
         }
-        node *new_top = new node();
+        node<T> *new_top = new node<T>();
         new_top->val = val;
         new_top->next = top_ptr;
         top_ptr = new_top;
@@ -31,7 +34,7 @@ class stack {
 
     public:void pop() {
         if(!empty()) {
-            node *temp = top_ptr;
+            node<T> *temp = top_ptr;
             top_ptr = top_ptr->next;
             delete temp;
             --size;
@@ -45,7 +48,7 @@ class stack {
     }
 
     public:void print() {
-        node *temp = top_ptr;
+        node<T> *temp = top_ptr;
         while(temp!=nullptr) {
             cout<<temp->val<<" ";
             temp = temp->next;
