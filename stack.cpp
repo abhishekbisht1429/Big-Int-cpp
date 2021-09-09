@@ -1,5 +1,4 @@
 #include<iostream>
-#include<string> 
 
 using namespace std;
 
@@ -19,7 +18,7 @@ class stack {
     public:bool empty() {
         return top_ptr == nullptr;
     }
-    public:void push(string val) {
+    public:void push(T val) {
         ++size;
         if(empty()) {
             top_ptr = new node<T>();
@@ -41,9 +40,9 @@ class stack {
         }
     }
 
-    public:string top() {
+    public:T top() {
         if(empty())
-            return "";
+            return T();
         return top_ptr->val;
     }
 
