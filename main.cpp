@@ -7,33 +7,15 @@
 
 #define DEBUG
 
-pair<int, int> convert(string &s, char **mag) {
-    int signum;
-    int len;
-    if(s[0] == '-') {
-        signum = -1;
-        len = s.size()-1;
-        for(int i=1; i<s.size(); ++i)
-            (*mag)[len-i] = s[i] - '0';
-    } else if(s.size()==1 && s[0] == '0') {
-        signum = 0;
-        len = 0;
-    } else {
-        signum = 1;
-        len = s.size();
-        for(int i=0; i<s.size(); ++i)
-            (*mag)[s.size()-i-1] = s[i] - '0';
-    }
-
-    return {signum, len};
-}
-
 inline bool isOp(string str) {
-    return str == "+" || str == "-" || str == "x" || str == "/";
+    return str == "+" || str == "-" || str == "x" || str == "/" ||
+            str == "^";
 }
 
 inline int preced(string str) {
-    if(str == "x")
+    if(str == "^")
+        return 10;
+    else if(str == "x")
         return 4;
     else if(str == "/")
         return 4;
@@ -47,6 +29,30 @@ inline int preced(string str) {
 
 inline bool isOperand(string str) {
     return !isOp(str) && str!="(" && str!=")";
+}
+
+int tokenize(string inp, string **out) {
+    inp += "#";
+    string *arr = new string[inp.size()];
+    string temp = "";
+    int j=0;
+    for(int i=0; i<inp.size(); ++i) {
+        if(isdigit(inp[i])) {
+            temp += inp[i];
+        } else {
+            if(temp!="")
+                arr[j++] = temp;
+            if(inp[i]!='#')
+                arr[j++] = inp[i];
+            temp = "";
+        }
+    }
+    *out = new string[j];
+    for(int i=0; i<j; ++i)
+        (*out)[i] = arr[i];
+    
+    delete[] arr;
+    return j;
 }
 
 int infixToPostfix(string *inp, int len, string **out) {
@@ -87,32 +93,7 @@ int infixToPostfix(string *inp, int len, string **out) {
     return len;
 }
 
-int tokenize(string inp, string **out) {
-    inp += "#";
-    string *arr = new string[inp.size()];
-    string temp = "";
-    int j=0;
-    for(int i=0; i<inp.size(); ++i) {
-        if(isdigit(inp[i])) {
-            temp += inp[i];
-        } else {
-            if(temp!="")
-                arr[j++] = temp;
-            if(inp[i]!='#')
-                arr[j++] = inp[i];
-            temp = "";
-        }
-    }
-    *out = new string[j];
-    for(int i=0; i<j; ++i)
-        (*out)[i] = arr[i];
-    
-    delete[] arr;
-    return j;
-}
-
 big_int eval(big_int &bi1, big_int &bi2, string op) {
-    // cout<<"op "<<op<<"\n";
     if(op == "+")
         return bi1+bi2;
     else if(op == "-")
@@ -121,6 +102,8 @@ big_int eval(big_int &bi1, big_int &bi2, string op) {
         return bi1*bi2;
     else if(op == "/")
         return bi1/bi2;
+    else if(op == "^")
+        return exp(bi1, bi2);
     else
         return big_int(0, nullptr, -1);
 }
@@ -129,18 +112,13 @@ big_int evalExpr(string *postfix, int len) {
     stack<big_int> st;
     for(int i=0; i<len; ++i) {
         if(isOperand(postfix[i])) {
-            cout<<"push "<<postfix[i]<<"\n";
             st.push(big_int(postfix[i]));
         } else {
             big_int a = st.top();
             st.pop();
             big_int b = st.top();
             st.pop();
-            cout<<"a "<<a<<"\n";
-            cout<<"b "<<b<<"\n";
             big_int res = eval(b, a, postfix[i]);
-            cout<<"res "<<postfix[i]<<" "<<res<<"\n";
-            cout<<"\n";
             st.push(res);
         }
     }
@@ -188,19 +166,9 @@ int main() {
             string expr;
             cin>>expr;
             string *infix = nullptr;
-            int lenIfx = tokenize(expr, &infix);
-            cout<<"infix : ";
-            for(int i=0; i<lenIfx; ++i)
-                cout<<"{"<<infix[i]<<"}";
-            cout<<"\n";
-        
-            cout<<"postfix : ";
             string *postfix = nullptr;
+            int lenIfx = tokenize(expr, &infix);
             int lenPfx = infixToPostfix(infix, lenIfx, &postfix);
-            cout<<"len pfx "<<lenPfx<<"\n";
-            for(int i=0; i<lenPfx; ++i)
-                cout<<"{"<<postfix[i]<<"}";
-            cout<<"\n";
             cout<<evalExpr(postfix, lenPfx)<<"\n";
             break;
         }
@@ -210,73 +178,6 @@ int main() {
             break;
         }
     }
-
-    // int signum1, signum2;
-    // int len1, len2;
-    // string s1, s2;
-    // getline(cin, s1);
-    // getline(cin, s2);
-    // char *mag1 = new char[s1.size()];
-    // char *mag2 = new char[s2.size()];
-
-    // tie(signum1, len1) = convert(s1, &mag1);
-    // tie(signum2, len2) = convert(s2, &mag2);
-
-
-
-    
-    // big_int bi1(signum1, mag1, len1);
-    // big_int bi2(signum2, mag2, len2);
-
-    // big_int bi3 = bi1 + bi2;
-    // big_int bi4 = bi1 - bi2;
-    // cout<<"sum "<<bi3<<"\n";
-    // cout<<"subtraction "<<bi4<<"\n";
-
-    // big_int bi5 = bi1 * bi2;
-    // cout<<"product "<<bi5<<"\n";
-
-    // big_int bi6 = exp(bi1, 2);
-    // cout<<bi6<<"\n";
-
-    // big_int bi7 = factorial(bi1);
-    // cout<<bi7<<"\n";
-
-    // big_int bi8 = bi1 / bi2;
-    // cout<<"quotient "<<bi8<<"\n";
-
-    // big_int bi9 = bi1%bi2;
-    // cout<<"remainder "<<bi9<<"\n";
-
-    // big_int bi10 = gcd(bi1, bi2);
-    // cout<<"gcd "<<bi10<<"\n";
-
-    // stack<string> s;
-    // s.push("hello");
-    // s.push("world");
-    // s.push("hi");
-
-    // s.print();
-    // s.pop();
-    // s.print();
-    // s.push("safda");
-    // s.print();
-
-    // string expr;
-    // cin>>expr;
-    // string *infix = nullptr;
-    // int lenIfx = tokenize(expr, &infix);
-    // cout<<"infix : ";
-    // for(int i=0; i<lenIfx; ++i)
-    //     cout<<infix[i]<<" ";
-    // cout<<"\n";
-
-    // cout<<"postfix : ";
-    // string *postfix = nullptr;
-    // int lenPfx = infixToPostfix(infix, lenIfx, &postfix);
-    // for(int i=0; i<lenPfx; ++i)
-    //     cout<<postfix[i]<<" ";
-    // cout<<"\n";
     /* #######################CODE_END############################### */
     #ifdef DEBUG
     auto _end = chrono::high_resolution_clock::now();
