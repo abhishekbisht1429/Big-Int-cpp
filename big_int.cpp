@@ -499,8 +499,17 @@ class big_int {
         
         return *this - ((*this/num)*num);
     }
+
+    /*
+        * absolute value 
+    */
+    public:friend big_int abs(const big_int &);
     public:friend ostream &operator<<(ostream&, big_int const &);
 };
+
+big_int abs(const big_int &num) {
+    return big_int(num.signum==0?0:1, num.mag, num.len);
+}
 
 ostream &operator<<(ostream &os, big_int const &num) {
     if(num.isZero()) {
@@ -542,6 +551,8 @@ big_int factorial(big_int n) {
 }
 
 big_int gcd(big_int bi1, big_int bi2) {
+    bi1 = abs(bi1);
+    bi2 = abs(bi2);
     if(bi1 < bi2)
         swap(bi1, bi2);
     
