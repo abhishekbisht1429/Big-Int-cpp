@@ -345,35 +345,42 @@ class big_int {
         * < Operator
     */
     public:bool operator<(const big_int &num) {
-        return comp(this->mag, this->len, num.get_mag(), num.get_len()) < 0;
-    }
-
-    /*
-        * <= operator
-    */
-    public:bool operator<=(const big_int &num) {
-        return comp(this->mag, this->len, num.get_mag(), num.get_len()) <= 0;
-    }
-
-    /*
-        * > operator
-    */
-    public:bool operator>(const big_int &num) {
-        return comp(this->mag, this->len, num.get_mag(), num.get_len()) > 0;
-    }
-
-    /*
-        * >= operator
-    */
-    public:bool operator>=(const big_int &num) {
-        return comp(this->mag, this->len, num.get_mag(), num.get_len()) >= 0;
+        int c = comp(this->mag, this->len, num.get_mag(), num.get_len());
+        if(this->signum == 1 && num.signum == 1)
+            return c<0;
+        else if(this->signum == -1 && num.signum == -1)
+            return c>0;
+        else
+            return this->signum < num.signum;
     }
 
     /*
         * == operator
     */
     public:bool operator==(const big_int &num) {
-        return comp(this->mag, this->len, num.get_mag(), num.get_len()) == 0;
+        return this->signum == num.signum && 
+                (this->mag, this->len, num.get_mag(), num.get_len()) == 0;
+    }
+
+    /*
+        * <= operator
+    */
+    public:bool operator<=(const big_int &num) {
+        return *this < num || *this == num;
+    }
+
+    /*
+        * > operator
+    */
+    public:bool operator>(const big_int &num) {
+        return !(*this <= num);
+    }
+
+    /*
+        * >= operator
+    */
+    public:bool operator>=(const big_int &num) {
+        return !(*this < num);
     }
 
     /*
@@ -513,7 +520,10 @@ ostream &operator<<(ostream &os, big_int const &num) {
 big_int exp(big_int &a, big_int p) {
     if(p.isZero())
         return big_int(1);
+    if(p < big_int(0))
+        return big_int(0);
     
+    cout<<(p<big_int(0))<<"\n";
     big_int res = exp(a, p/2);
     if(p%2 == 0) {
         return res * res;
