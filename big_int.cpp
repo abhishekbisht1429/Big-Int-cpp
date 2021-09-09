@@ -358,7 +358,7 @@ class big_int {
         * == operator
     */
     public:bool operator==(const big_int &num) {
-        return this->signum == num.signum && 
+        return (this->signum == num.signum) && 
                 (this->mag, this->len, num.get_mag(), num.get_len()) == 0;
     }
 
@@ -395,25 +395,26 @@ class big_int {
     */
     public:big_int operator+(const big_int &num) const {
         /* handle the cases when either is zero */
-        if(num.isZero())
+        if(num.isNaN() || this->isNaN())
+            return big_int(0, nullptr, -1);
+        else if(num.isZero())
             return *this;
         else if(this->isZero())
             return num;
-        else if(num.isNaN() || this->isNaN())
-            return big_int(0, nullptr, -1);
+
         
         char *mag = nullptr;
         int len;
         int signum;
         if(this->signum * num.get_signum() > 0) {
             len = this->sum(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
-            signum = this->signum;
+            signum = len==0?0:this->signum;
         } else {
             len = this->diff(this->mag, this->len, num.get_mag(), num.get_len(), &mag);
             if(comp(this->mag, this->len, num.get_mag(), num.get_len()) > 0) {
                 signum = this->signum;
             } else {
-                signum = num.get_signum();
+                signum = len==0?0:num.get_signum();
             }
         }
 
@@ -529,16 +530,13 @@ ostream &operator<<(ostream &os, big_int const &num) {
 big_int exp(big_int &a, big_int p) {
     if(p.isZero())
         return big_int(1);
-    if(p < big_int(0))
+    if(p < 0)
         return big_int(0);
-    
-    cout<<(p<big_int(0))<<"\n";
     big_int res = exp(a, p/2);
-    if(p%2 == 0) {
+    if(p%2 == 0)
         return res * res;
-    } else {
+    else
         return res * res * a;
-    }
 }
 
 big_int factorial(big_int n) {
