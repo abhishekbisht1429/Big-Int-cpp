@@ -56,7 +56,7 @@ int infixToPostfix(string *inp, int len, string **out) {
     string *postfix = new string[len];
     for(int i=0; i<len; ++i)
         postfix[i] = "";
-    stack st;
+    stack<string> st;
     st.push("(");
     infix[len] = ")";
 
@@ -96,7 +96,8 @@ int tokenize(string inp, string **out) {
         if(isdigit(inp[i])) {
             temp += inp[i];
         } else {
-            arr[j++] = temp;
+            if(temp!="")
+                arr[j++] = temp;
             if(inp[i]!='#')
                 arr[j++] = inp[i];
             temp = "";
@@ -108,6 +109,42 @@ int tokenize(string inp, string **out) {
     
     delete[] arr;
     return j;
+}
+
+big_int eval(big_int &bi1, big_int &bi2, string op) {
+    // cout<<"op "<<op<<"\n";
+    if(op == "+")
+        return bi1+bi2;
+    else if(op == "-")
+        return bi1-bi2;
+    else if(op == "x")
+        return bi1*bi2;
+    else if(op == "/")
+        return bi1/bi2;
+    else
+        return big_int(0, nullptr, -1);
+}
+
+big_int evalExpr(string *postfix, int len) {
+    stack<big_int> st;
+    for(int i=0; i<len; ++i) {
+        if(isOperand(postfix[i])) {
+            cout<<"push "<<postfix[i]<<"\n";
+            st.push(big_int(postfix[i]));
+        } else {
+            big_int a = st.top();
+            st.pop();
+            big_int b = st.top();
+            st.pop();
+            cout<<"a "<<a<<"\n";
+            cout<<"b "<<b<<"\n";
+            big_int res = eval(b, a, postfix[i]);
+            cout<<"res "<<postfix[i]<<" "<<res<<"\n";
+            cout<<"\n";
+            st.push(res);
+        }
+    }
+    return st.top();
 }
 
 int main() {
@@ -154,15 +191,17 @@ int main() {
             int lenIfx = tokenize(expr, &infix);
             cout<<"infix : ";
             for(int i=0; i<lenIfx; ++i)
-                cout<<infix[i]<<" ";
+                cout<<"{"<<infix[i]<<"}";
             cout<<"\n";
         
             cout<<"postfix : ";
             string *postfix = nullptr;
             int lenPfx = infixToPostfix(infix, lenIfx, &postfix);
+            cout<<"len pfx "<<lenPfx<<"\n";
             for(int i=0; i<lenPfx; ++i)
-                cout<<postfix[i]<<" ";
+                cout<<"{"<<postfix[i]<<"}";
             cout<<"\n";
+            cout<<evalExpr(postfix, lenPfx)<<"\n";
             break;
         }
 
@@ -212,7 +251,7 @@ int main() {
     // big_int bi10 = gcd(bi1, bi2);
     // cout<<"gcd "<<bi10<<"\n";
 
-    // stack s;
+    // stack<string> s;
     // s.push("hello");
     // s.push("world");
     // s.push("hi");
