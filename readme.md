@@ -13,4 +13,7 @@
     - 1 is for *exponentiation* and should be followed by a line containing two integers `b p` where b is base and p is power.
     - 2 is for *gcd* and should be followed by a line containing integers `a b` whose gcd is to be computed.
     - 3 is for *factorial* and should be followe by a line contaning a single non-negetive integer.
-    - 4 is for *calculator* and should containg a valid expression consisting of non negetive integers and one or more  `+`, `-`, `x` or `/` signs. 
+    - 4 is for *calculator* and should containg a valid expression consisting of non negetive integers and one or more  `+`, `-`, `x` or `/` signs.
+
+**NOTE**
+- There is no strict validation of the input provided by the user, therefore, if the input does not meet the format described above the result will be undefined.
