@@ -159,7 +159,10 @@ int main() {
             string s;
             cin>>s;
             big_int bi(s);
-            cout<<factorial(bi)<<"\n";
+            if(bi < big_int(0))
+                cout<<"Factorial is not defined for negetive integers\n";
+            else
+                cout<<factorial(bi)<<"\n";
             break;
         }
         case 4: {
