@@ -529,9 +529,13 @@ ostream &operator<<(ostream &os, big_int const &num) {
 
 big_int exp(big_int &a, big_int p) {
     if(p.isZero())
-        return big_int(1);
-    if(p < 0)
-        return big_int(0);
+        return 1;
+    if(p < -1)
+        return 0;
+    if(a == -1 && p == -1)
+        return -1;
+    if(a == 1 && p == -1)
+        return 1;
     big_int res = exp(a, p/2);
     if(p%2 == 0)
         return res * res;
